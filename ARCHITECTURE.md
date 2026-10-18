@@ -208,7 +208,11 @@ dbk-handoff/
 ├── CHANGELOG.md            # 变更记录（Keep a Changelog）
 └── skills/
     ├── dbk-handoff/
-    │   └── SKILL.md        # dbk-handoff Skill 规范定义
+    │   ├── SKILL.md        # dbk-handoff Skill 规范定义
+    │   └── evals/
+    │       └── trigger-queries.json
     └── dbk-pickup/
-        └── SKILL.md        # dbk-pickup Skill 规范定义
+        ├── SKILL.md        # dbk-pickup Skill 规范定义
+        └── evals/
+            └── trigger-queries.json
 ```
