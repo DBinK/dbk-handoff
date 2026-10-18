@@ -102,12 +102,12 @@ transcript: <transcript 绝对路径，客户端未暴露时省略本行>
 我在使用另一个 AI 协助开发，现需要你接手该任务。
 
 【前置检查】
-请检查你是否已安装 `dbk-pickup` skill。如果未安装，请使用你所在客户端的 Skill 安装机制自行完成安装（例如支持 skills CLI 时可执行 `npx skills add DBinK/dbk-handoff -g -y`），安装完成后请重新加载/刷新 skills，再调用 `dbk-pickup`。
+请检查你是否已安装 `dbk-pickup` skill。若未安装，请先装上该 skill（如 `npx skills add DBinK/dbk-handoff -g -y`）并重新加载 skills，再调用 `dbk-pickup`。
 
 【接手指引】
 请调用 `dbk-pickup` skill 并结合以下信息开展工作：
 - 项目根目录：<workspace 绝对路径>
-- 交接报告路径：.agent/handoff/<YYMMDD>-<HHMM>-<task>.md
+- 交接报告路径：<workspace 绝对路径>/.agent/handoff/<YYMMDD>-<HHMM>-<task>.md
 - 原 Agent 完整对话记录（仅在报告细节不足时按需查阅，请勿盲目全读）：<transcript 绝对路径，若客户端未暴露则省略本行>
 
 请先阅读交接报告，用简短几句话向我确认你已理清当前现状和下一步，然后再继续执行任务。

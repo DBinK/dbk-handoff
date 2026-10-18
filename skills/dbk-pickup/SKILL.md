@@ -17,7 +17,7 @@ metadata:
 
 按“显式指定优先、`latest.md` 兜底”的顺序读取报告：
 
-1. **显式指定**：若用户指令或引导 Prompt 中给出了具体的交接报告路径（如 `.agent/handoff/<YYMMDD>-<HHMM>-<task>.md`），直接读取该指定文件。
+1. **显式指定**：若用户指令或引导 Prompt 中给出了具体的交接报告路径（如 `<workspace>/.agent/handoff/<YYMMDD>-<HHMM>-<task>.md`），直接读取该指定文件。
 2. **缺省兜底**：若用户未附带具体路径（如直接调用 `/dbk-pickup`），默认读取 `<workspace>/.agent/handoff/latest.md`。由于 `latest.md` 与权威快照内容完全一致，**读取后直接使用其正文即可，无需再次读取 `snapshot` 字段指向的同名快照文件**（`snapshot` 字段仅用于标识快照归属与汇报引用）。
 3. **缺失处理**：若指定文件或 `.agent/handoff/latest.md` 不存在，列出 `.agent/handoff/` 下已有的快照供用户选择，或告知用户当前工作区尚无交接报告。
 

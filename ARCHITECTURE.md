@@ -167,12 +167,12 @@ sequenceDiagram
 我在使用另一个 AI 协助开发，现需要你接手该任务。
 
 【前置检查】
-请检查你是否已安装 `dbk-pickup` skill。如果未安装，请使用你所在客户端的 Skill 安装机制自行完成安装（例如支持 skills CLI 时可执行 `npx skills add DBinK/dbk-handoff -g -y`），安装完成后请重新加载/刷新 skills，再调用 `dbk-pickup`。
+请检查你是否已安装 `dbk-pickup` skill。若未安装，请先装上该 skill（如 `npx skills add DBinK/dbk-handoff -g -y`）并重新加载 skills，再调用 `dbk-pickup`。
 
 【接手指引】
 请调用 `dbk-pickup` skill 并结合以下信息开展工作：
-- 项目根目录：<绝对路径>
-- 交接报告路径：.agent/handoff/<YYMMDD>-<HHMM>-<简短主题>.md
+- 项目根目录：<工作区绝对路径>
+- 交接报告路径：<工作区绝对路径>/.agent/handoff/<YYMMDD>-<HHMM>-<简短主题>.md
 - 原 Agent 完整对话记录（仅在报告细节不足时按需查阅，请勿盲目全读）：<原Agent日志绝对路径，若客户端未暴露则省略本行>
 
 请先阅读交接报告，用简短几句话向我确认你已理清当前现状和下一步，然后再继续执行任务。
@@ -187,7 +187,7 @@ sequenceDiagram
 本 Skill 是读取交接报告的唯一入口。未加载本 Skill 指引时，Agent 不得直接裸读 `latest.md` 或历史快照——路径解析、版本校验、Git 状态比对与 Transcript 访问约束均定义在本 Skill 中。
 
 1. **报告路径解析顺序（精准优先，latest.md 兜底）**：
-   - **显式指定**：如果用户或引导 Prompt 中提供了具体的交接报告路径（如 `.agent/handoff/<YYMMDD>-<HHMM>-<slug>.md`），**必须精准读取该指定文件**。
+   - **显式指定**：如果用户或引导 Prompt 中提供了具体的交接报告路径（如 `<工作区绝对路径>/.agent/handoff/<YYMMDD>-<HHMM>-<slug>.md`），**必须精准读取该指定文件**。
    - **缺省兜底**：如果用户直接调用 `/dbk-pickup`（没有任何附加参数或引导 Prompt），则默认兜底读取 `.agent/handoff/latest.md`。由于 `latest.md` 与权威快照内容完全一致，读取后即可直接使用其正文，无需再次读取 `snapshot` 字段指向的同名快照文件（`snapshot` 字段仅用于标识快照归属与历史回溯）。
    - 读取后提取核心内容：任务目标、工作集清单、进度、避坑提醒、下一步待办与自测命令。
    - **元数据校验**：确认 `handoff_version` 在支持范围内，对比报告中的 `git.branch`、`git.head`、`git.dirty` 与当前仓库状态。若不一致，先告知用户“交接后工作区已发生变化”，确认后再执行待办。
