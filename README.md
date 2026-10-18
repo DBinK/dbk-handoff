@@ -1,6 +1,9 @@
 # dbk-handoff
 
 [![skills.sh](https://skills.sh/b/DBinK/dbk-handoff)](https://skills.sh/DBinK/dbk-handoff)
+[![Agent Skills](https://img.shields.io/badge/Agent_Skills-Standard-black)](https://agentskills.io)
+[![Protocol](https://img.shields.io/badge/Handoff_Protocol-v1-blue)](ARCHITECTURE.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 > **跨 AI Agent 的通用上下文交接与接力协议**
 
