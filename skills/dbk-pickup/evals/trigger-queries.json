@@ -1,0 +1,66 @@
+[
+  {
+    "query": "我在使用另一个 AI 协助开发，现需要你接手该任务。请调用 dbk-pickup skill，交接报告路径：.agent/handoff/261018-1230-auth-refactor.md",
+    "should_trigger": true
+  },
+  {
+    "query": "跑一下 dbk-pickup，接着上一个 agent 的进度往下做",
+    "should_trigger": true
+  },
+  {
+    "query": "读一下 .agent/handoff/latest.md，跟我确认一下当前进度和下一步，然后继续改",
+    "should_trigger": true
+  },
+  {
+    "query": "我刚从 Cursor 切过来，工作区里有之前留下的 handoff 报告，帮我接手继续开发",
+    "should_trigger": true
+  },
+  {
+    "query": "用 dbk-pickup 恢复上下文，看看上个会话卡在哪了",
+    "should_trigger": true
+  },
+  {
+    "query": "接手 .agent/handoff/261018-1420-fix-token-expiry.md 里的任务，先对齐一下状态",
+    "should_trigger": true
+  },
+  {
+    "query": "pickup 一下最新的交接快照，按里面的待办继续推进",
+    "should_trigger": true
+  },
+  {
+    "query": "读取 .agent/handoff 下的最新交接文档，确认理解后接着做",
+    "should_trigger": true
+  },
+  {
+    "query": "当前上下文太长了，跑一下 dbk-handoff 生成交接报告，我要换个窗口",
+    "should_trigger": false
+  },
+  {
+    "query": "总结一下现在的进度和踩坑点，导出 handoff 快照给下一个 agent",
+    "should_trigger": false
+  },
+  {
+    "query": "先停在这，帮我写一份交接文档放到 .agent/handoff 里",
+    "should_trigger": false
+  },
+  {
+    "query": "读一下 README.md 和 ARCHITECTURE.md，看看这个项目是怎么设计的",
+    "should_trigger": false
+  },
+  {
+    "query": "帮我 git pull 拉一下远端最新代码，看看有没有冲突",
+    "should_trigger": false
+  },
+  {
+    "query": "恢复一下刚才 git stash 暂存的改动",
+    "should_trigger": false
+  },
+  {
+    "query": "跑一下 pytest 看看现在的测试能不能过",
+    "should_trigger": false
+  },
+  {
+    "query": "看下 git log 最近三次提交都改了什么",
+    "should_trigger": false
+  }
+]

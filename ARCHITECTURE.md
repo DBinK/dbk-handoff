@@ -199,12 +199,13 @@ sequenceDiagram
 
 ---
 
-## 5. 项目路线图与文件组织建议
+## 5. 仓库文件组织
 
 ```text
 dbk-handoff/
 ├── README.md               # 项目介绍、跨 Agent 支持情况、快速上手指引
 ├── ARCHITECTURE.md         # 架构设计与协议标准（本文档）
+├── CHANGELOG.md            # 变更记录（Keep a Changelog）
 └── skills/
     ├── dbk-handoff/
     │   └── SKILL.md        # dbk-handoff Skill 规范定义

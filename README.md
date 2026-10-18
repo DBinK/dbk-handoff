@@ -58,3 +58,4 @@ git: { branch: main, head: 11670ce, dirty: true }
 ## 文档
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) — 存储与命名规范、报告元数据、工作流程、Skill 设计细节。
+- [CHANGELOG.md](CHANGELOG.md) — 项目显著变更记录。

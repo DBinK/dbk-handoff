@@ -1,0 +1,66 @@
+[
+  {
+    "query": "跑一下 dbk-handoff，我要换到 Cursor 里接着改这个模块",
+    "should_trigger": true
+  },
+  {
+    "query": "当前上下文太长了，帮我做个交接总结写到 .agent/handoff 里，我新开个会话继续",
+    "should_trigger": true
+  },
+  {
+    "query": "总结一下现在的进度、踩过的坑和下一步待办，生成一份 handoff 报告给我复制给另一个 agent",
+    "should_trigger": true
+  },
+  {
+    "query": "先做到这，帮我导出交接快照和引导 prompt，等会我用 Claude Code 接着跑",
+    "should_trigger": true
+  },
+  {
+    "query": "做个阶段性 handoff 归档，把改过的文件和已经排除的死胡同记下来，方便下个窗口接手",
+    "should_trigger": true
+  },
+  {
+    "query": "准备换个客户端继续调这个 bug，帮我生成交接文档",
+    "should_trigger": true
+  },
+  {
+    "query": "执行 dbk-handoff 把当前任务状态存下来",
+    "should_trigger": true
+  },
+  {
+    "query": "这个会话 token 快满了，整理一份交接报告给下一个 agent 接力",
+    "should_trigger": true
+  },
+  {
+    "query": "我在使用另一个 AI 协助开发，现需要你接手该任务。请调用 dbk-pickup 并读取 .agent/handoff/261018-1230-auth-refactor.md",
+    "should_trigger": false
+  },
+  {
+    "query": "读取 .agent/handoff/latest.md 接手之前的任务继续写",
+    "should_trigger": false
+  },
+  {
+    "query": "用 dbk-pickup 恢复一下上个 agent 留下的进度",
+    "should_trigger": false
+  },
+  {
+    "query": "帮我给这次改动写一段 git commit message",
+    "should_trigger": false
+  },
+  {
+    "query": "总结一下这个 PR 改了哪些文件，帮我写一份 PR 描述",
+    "should_trigger": false
+  },
+  {
+    "query": "更新一下 CHANGELOG.md，把今天新增的接口记进去",
+    "should_trigger": false
+  },
+  {
+    "query": "给我讲一下 src/auth.rs 这个文件主要做了什么",
+    "should_trigger": false
+  },
+  {
+    "query": "把当前未提交的改动 git stash 存起来，我切个分支",
+    "should_trigger": false
+  }
+]
