@@ -69,7 +69,7 @@
 | `source_agent` | 是 | 生成报告的 Agent 标识，如 `claude-code`、`cursor`。 |
 | `source_model` | 否 | 生成报告的模型标识。 |
 | `task` | 是 | 简短任务主题，与文件名中的 `<简短主题>` 对应。 |
-| `git` | 否 | 仓库状态：`branch`、`head`（短 SHA）、`dirty`（是否有未提交改动）。非 Git 工作区可省略。 |
+| `git` | 否 | 仓库状态：`branch`、`head`（短 SHA）、`dirty`（是否有未提交改动）。非 Git 工作区可省略。`dirty` 在写入本次交接文件之前采集，且忽略 `.agent/` 路径，避免交接产物本身把工作区标记为脏。 |
 | `transcript` | 否 | 原 Agent 会话日志的绝对路径（仅在当前客户端环境显式暴露路径时填写，未暴露时省略，禁止盲搜或猜测路径）。 |
 
 - 未知字段应被忽略，以保证向后兼容。
@@ -205,7 +205,9 @@ sequenceDiagram
 dbk-handoff/
 ├── README.md               # 项目介绍、跨 Agent 支持情况、快速上手指引
 ├── ARCHITECTURE.md         # 架构设计与协议标准（本文档）
+├── AGENTS.md               # Agent / 贡献者工作约定与校验命令
 ├── CHANGELOG.md            # 变更记录（Keep a Changelog）
+├── LICENSE                 # MIT
 └── skills/
     ├── dbk-handoff/
     │   ├── SKILL.md        # dbk-handoff Skill 规范定义

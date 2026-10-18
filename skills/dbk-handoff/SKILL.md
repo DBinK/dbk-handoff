@@ -24,7 +24,7 @@ metadata:
 - `workspace`：当前工作区根目录的绝对路径。
 - `source_agent`：当前客户端标识（如 `claude-code`、`cursor`、`antigravity`、`pi`、`opencode`）。
 - `source_model`（可选）：当前模型标识，未知时可省略。
-- `git`（可选）：若当前工作区是 Git 仓库，用只读命令获取当前分支名（`branch`）、HEAD 短哈希（`head`）以及是否有未提交变更（`dirty: true|false`）。非 Git 仓库省略该字段。
+- `git`（可选）：若当前工作区是 Git 仓库，用只读命令获取当前分支名（`branch`）、HEAD 短哈希（`head`）以及是否有未提交变更（`dirty: true|false`）。`dirty` 应在写入交接文件之前采集，并忽略 `.agent/` 路径，避免交接产物本身把工作区标记为脏。非 Git 仓库省略该字段。
 - `transcript`（可选）：**仅当当前上下文环境已显式暴露本机对话日志文件的绝对路径时填写**。未暴露时直接省略该字段，**严禁在宿主目录盲目搜索或编造猜测路径**。
 
 ### 2. 提炼高密度交接内容
