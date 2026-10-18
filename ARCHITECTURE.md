@@ -13,7 +13,7 @@
 | **发出端 Skill** | `dbk-handoff` | 总结当前进度、写入上下文报告、生成引导 Prompt |
 | **接收端 Skill** | `dbk-pickup` | 接管任务、读取交接报告、向用户确认后继续执行 |
 | **报告存储目录** | `.agent/handoff/` | 位于当前工作区（Workspace）根目录下 |
-| **最新快照指针** | `.agent/handoff/latest.md` | 同步保存最新一份快照，方便免参快速读取 |
+| **最新快照副本** | `.agent/handoff/latest.md` | 最新一份快照的完整拷贝，方便免参快速读取；文件内 `snapshot` 字段指向权威快照 |
 
 ---
 
@@ -25,7 +25,7 @@
 ├── .agent/
 │   └── handoff/
 │       ├── .gitignore                        # 自动生成：默认忽略目录内所有快照文件
-│       ├── latest.md                         # 始终指向/覆盖为最新一次交接内容
+│       ├── latest.md                         # 最新快照的完整拷贝（snapshot 字段指向权威快照）
 │       ├── 261018-1230-auth-refactor.md      # 历史交接快照 1
 │       └── 261018-1420-fix-token-expiry.md   # 历史交接快照 2
 └── ... (项目业务代码)
@@ -54,6 +54,27 @@
   1. **跨平台与权限兼容性（关键痛点）**：Windows 操作系统默认需要管理员权限或启用开发者模式才能创建符号链接（`mklink`），普通终端/Agent 会频发 `Access is denied` 错误；在 WSL、Docker、不同文件系统间切换时也极易断链。
   2. **避免多余 Tool Call 交互**：接手 Agent 兜底读取 `latest.md` 时，一步读完即可获得完整高密度上下文，无需二次跳转解引用。
   3. **体积微乎其微**：单份交接文档通常仅 1~3 KB，双写不会对存储带来任何可见开销。
+- **快照归属**：`latest.md` 不是指针，而是最新快照的完整拷贝。报告模板中的 `snapshot` 字段记录该内容的权威快照文件名，因此即使 `latest.md` 被后续交接覆盖，读取者仍能据此回溯历史快照。`snapshot` 必须与写入时的快照文件名一致，两份文件内容保持完全一致。
+
+### 2.4 报告元数据（YAML Frontmatter）
+
+每份交接报告开头必须包含 YAML frontmatter，用于版本校验、状态比对和机器解析：
+
+| 字段 | 必填 | 说明 |
+| :--- | :--- | :--- |
+| `handoff_version` | 是 | 协议版本，当前为 `1`；不兼容变更时递增主版本号。 |
+| `created` | 是 | 生成时间，ISO 8601 格式并带时区偏移，如 `"2026-10-18T12:30:00+08:00"`；建议加引号，避免被 YAML 解析器自动转成时间类型。 |
+| `snapshot` | 是 | 权威快照文件名，必须与当前文件名一致；`latest.md` 内同样保留该字段。 |
+| `workspace` | 是 | 工作区根目录的绝对路径。 |
+| `source_agent` | 是 | 生成报告的 Agent 标识，如 `claude-code`、`cursor`。 |
+| `source_model` | 否 | 生成报告的模型标识。 |
+| `task` | 是 | 简短任务主题，与文件名中的 `<简短主题>` 对应。 |
+| `git` | 否 | 仓库状态：`branch`、`head`（短 SHA）、`dirty`（是否有未提交改动）。非 Git 工作区可省略。 |
+| `transcript` | 否 | 原 Agent 会话日志的绝对路径（仅在当前客户端环境显式暴露路径时填写，未暴露时省略，禁止盲搜或猜测路径）。 |
+
+- 未知字段应被忽略，以保证向后兼容。
+- 接手端读取到高于自身支持版本的 `handoff_version` 时，必须提示用户并降级为人工阅读，不得按旧规则解析。
+- `git` 字段用于判断交接后工作区是否已发生变化；不一致时接手端应先向用户确认。
 
 ---
 
@@ -82,28 +103,38 @@ sequenceDiagram
 
 ### 4.1 发出端：`dbk-handoff`
 
-> **设计参考来源**：本交接报告格式深度吸收了 **`can1357/oh-my-pi` (omp)** 的 session handoff 机制与设计哲学。omp 证明了通过高密度结构化交接，可以彻底杜绝接手 Agent 展开低效的“代码考古搜索（File Archaeology）”，并将已被排除的死胡同方案（Dead Ends）前置锁定，防止新 Agent 走回头路。
+> **设计参考来源**：本交接报告格式深度吸收了 **`can1357/oh-my-pi` (omp)** 的 session handoff 机制与设计哲学。omp 证明了通过高密度结构化交接，可以避免接手 Agent 展开低效的“代码考古搜索（File Archaeology）”，并将已被排除的死胡同方案（Dead Ends）前置锁定，防止新 Agent 走回头路。
 
 #### 报告提炼要素与执行步骤：
 1. **分析当前上下文**：提炼以下核心要素，并写入标准化报告：
+   - **📋 报告元数据 (Frontmatter)**：按 §2.4 填写 `handoff_version`、`created`、`snapshot`、`workspace`、`source_agent`、`source_model`、`task`、`git` 状态与可选的 `transcript`。
    - **🎯 任务目标 (Goal & Scope)**：原始用户需求与最终验收交付标准。
    - **📂 核心工作集 (Key Files & Working Set - 吸收自 omp)**：明确列出 5~15 个关键文件路径（被修改的文件、核心依赖、测试用例、配置文件），并附带一句话角色说明，避免新 Agent 盲目全局 grep。
    - **✅ 已完成进展 (Completed Work)**：修改了哪些文件、跑通了哪些功能。
-   - **💡 关键决策与避坑指南 (Decisions & Dead Ends - 吸收自 omp)**：为什么采用该方案；**特别记录尝试过但失败的方案与踩坑点**，明令禁止接手 Agent 重复踩坑。
+   - **💡 关键决策与避坑指南 (Decisions & Dead Ends - 吸收自 omp)**：为什么采用该方案，**特别记录尝试过但失败的方案与踩坑点**，明令禁止接手 Agent 重复踩坑。
    - **⏳ 当前停顿点与下一步待办 (Next Steps)**：明确当前精确卡在哪个具体代码位置，下一步立即执行的有序待办列表。
    - **🧪 验证与自测方案 (Verification Plan - 吸收自 omp)**：接手 Agent 编写完代码后应运行的验证命令（如 `npm test`、`cargo check`、`pytest` 等）。
-   - **📜 原始会话日志 (Raw Transcript Path)**：记录原 Agent 本地日志文件的绝对路径，作为兜底依据。
+   - **📜 原始会话日志 (Raw Transcript Path，可选)**：仅当当前环境显式暴露本地会话日志路径时，记录其绝对路径作为兜底依据（写入 frontmatter 的 `transcript` 字段及引导 Prompt），未暴露时直接省略，禁止搜索宿主目录或猜测路径。
 
 2. **写盘归档**：
    - 检查 `.agent/handoff/` 目录，若首次创建则自动放置 `.gitignore`。
-   - 按照 `<YYMMDD>-<HHMM>-<简短主题>.md` 写入交接快照。
-   - 同步覆盖写入一份至 `.agent/handoff/latest.md`。
+   - 按照 `<YYMMDD>-<HHMM>-<简短主题>.md` 写入交接快照，frontmatter 中的 `snapshot` 填写该文件名，并与 `created`、`git` 等元数据保持一致。
+   - 同步覆盖写入一份内容完全相同的副本至 `.agent/handoff/latest.md`。
 
 3. **生成的标准交接报告模板示例（`.agent/handoff/<slug>.md`）**：
    ```markdown
+   ---
+   handoff_version: 1
+   created: "<YYYY-MM-DDTHH:MM:SS+08:00>"
+   snapshot: <YYMMDD>-<HHMM>-<简短主题>.md
+   workspace: <工作区绝对路径>
+   source_agent: <agent 标识>
+   source_model: <model-id>
+   task: <简短主题>
+   git: { branch: <branch>, head: <short-sha>, dirty: <true|false> }
+   transcript: <transcript 绝对路径，客户端未暴露时省略本行>
+   ---
    # Handoff: <简短主题>
-   - **生成时间**: <本地时间>
-   - **原 Agent 日志**: `<transcript 绝对路径>` (仅在关键细节缺失时按需查阅)
 
    ## 🎯 任务目标 (Goal)
    <简述任务目标与交付标准>
@@ -136,14 +167,13 @@ sequenceDiagram
 我在使用另一个 AI 协助开发，现需要你接手该任务。
 
 【前置检查】
-请检查你是否已安装 `dbk-pickup` skill。如果未安装，请在终端执行以下命令进行全局安装：
-`npx skills add DBinK/dbk-handoff -g -y`
+请检查你是否已安装 `dbk-pickup` skill。如果未安装，请使用你所在客户端的 Skill 安装机制自行完成安装（例如支持 skills CLI 时可执行 `npx skills add DBinK/dbk-handoff -g -y`），安装完成后请重新加载/刷新 skills，再调用 `dbk-pickup`。
 
 【接手指引】
 请调用 `dbk-pickup` skill 并结合以下信息开展工作：
 - 项目根目录：<绝对路径>
 - 交接报告路径：.agent/handoff/<YYMMDD>-<HHMM>-<简短主题>.md
-- 原 Agent 完整对话记录（仅在报告细节不足时按需查阅，请勿盲目全读）：<原Agent日志绝对路径>
+- 原 Agent 完整对话记录（仅在报告细节不足时按需查阅，请勿盲目全读）：<原Agent日志绝对路径，若客户端未暴露则省略本行>
 
 请先阅读交接报告，用简短几句话向我确认你已理清当前现状和下一步，然后再继续执行任务。
 ----------------------------------------
@@ -153,12 +183,16 @@ sequenceDiagram
 
 ### 4.2 接收端：`dbk-pickup`
 #### 职责与渐进式加载（Progressive Disclosure）原则：
+
+本 Skill 是读取交接报告的唯一入口。未加载本 Skill 指引时，Agent 不得直接裸读 `latest.md` 或历史快照——路径解析、版本校验、Git 状态比对与 Transcript 访问约束均定义在本 Skill 中。
+
 1. **报告路径解析顺序（精准优先，latest.md 兜底）**：
    - **显式指定**：如果用户或引导 Prompt 中提供了具体的交接报告路径（如 `.agent/handoff/<YYMMDD>-<HHMM>-<slug>.md`），**必须精准读取该指定文件**。
-   - **缺省兜底**：如果用户直接调用 `/dbk-pickup`（没有任何附加参数或引导 Prompt），则默认兜底读取 `.agent/handoff/latest.md`。
+   - **缺省兜底**：如果用户直接调用 `/dbk-pickup`（没有任何附加参数或引导 Prompt），则默认兜底读取 `.agent/handoff/latest.md`。由于 `latest.md` 与权威快照内容完全一致，读取后即可直接使用其正文，无需再次读取 `snapshot` 字段指向的同名快照文件（`snapshot` 字段仅用于标识快照归属与历史回溯）。
    - 读取后提取核心内容：任务目标、工作集清单、进度、避坑提醒、下一步待办与自测命令。
+   - **元数据校验**：确认 `handoff_version` 在支持范围内，对比报告中的 `git.branch`、`git.head`、`git.dirty` 与当前仓库状态。若不一致，先告知用户“交接后工作区已发生变化”，确认后再执行待办。
 2. **防 Token 爆炸约束（核心安全机制）**：
-   - **严禁主动一次性通读原 Agent 的完整 Transcript 文件**。只有在交接报告中存在严重缺失且用户授权时，才按需检索特定行范围。
+   - **严禁主动一次性通读原 Agent 的完整 Transcript 文件**。只有在交接报告中存在严重缺失、报告提供了 `transcript` 路径且用户授权时，才按需检索特定行范围。
 3. **向用户对齐状态**：
    - 读取完毕后，用简短 3~4 句话向用户汇报：已理解的目标、下一步将要做什么。
    - 获得用户确认或直接开启第一步行动。
