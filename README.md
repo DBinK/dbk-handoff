@@ -5,7 +5,7 @@
 [![Protocol](https://img.shields.io/badge/Handoff_Protocol-v1-blue)](ARCHITECTURE.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-> **跨 AI Agent 的通用上下文交接与接力协议**
+> **跨 AI Agent 的通用上下文交接与接力协议 Skills**
 
 在 Claude Code、Cursor、Windsurf、OpenHands 等工具之间切换时，新 Agent 往往缺少上一个会话的目标、进度和踩坑记录，只能重新翻代码。`dbk-handoff` 用一份高密度 Markdown 快照解决这个问题：发出端负责总结，接收端负责接手，全程不依赖服务端或外部中转。
 
