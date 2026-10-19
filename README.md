@@ -38,8 +38,8 @@ npx skills add DBinK/dbk-handoff -g -y
 
 ## 使用
 
-1. **发出交接**：在当前 Agent 中调用 skill  `/dbk-handoff`。它会写入一份 `<YYMMDD>-<HHMM>-<主题>.md` 快照和 `latest.md` 副本，并输出一段引导 Prompt。
-2. **接手任务**：把引导 Prompt 粘贴给新 Agent。它调用 `/dbk-pickup`，读取报告、复述理解，然后继续执行。
+1. **发出交接**：在当前 Agent 中调用 skill `/dbk-handoff`。它会写入一份 `<YYMMDD>-<HHMM>-<主题>.md` 快照和 `latest.md` 副本，并输出一段引导 Prompt。
+2. **接手任务**：把引导 Prompt 粘贴给新 Agent。它调用 `/dbk-pickup` 读取报告、汇报理解并停下来等待你确认，确认后再继续执行。
 
 引导 Prompt 示例：
 
@@ -51,11 +51,11 @@ npx skills add DBinK/dbk-handoff -g -y
 请检查你是否已安装 `dbk-pickup` skill。若未安装，请先装上该 skill（如 `npx skills add DBinK/dbk-handoff -g -y`）并重新加载 skills，再调用 `dbk-pickup`。
 
 【接手指引】
-请调用 `dbk-pickup` skill 并结合以下信息开展工作：
+请调用 `dbk-pickup` skill 恢复以下任务的上下文：
 - 项目根目录：/abs/path/to/workspace
 - 交接报告路径：/abs/path/to/workspace/.agent/handoff/261018-1230-auth-refactor.md
 
-请先阅读交接报告，用简短几句话向我确认你已理清当前现状和下一步，然后再继续执行任务。
+请先阅读交接报告，用简短几句话向我汇报你所理解的当前现状与下一步计划，然后停下来等待我确认，在此之前不要修改任何文件或执行待办命令。
 ----------------------------------------
 ````
 

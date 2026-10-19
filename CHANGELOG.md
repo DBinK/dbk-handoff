@@ -4,6 +4,12 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，条目按日期组织（个人项目，暂不采用版本号）。
 
+## 2026-10-19
+
+### Changed
+
+- 收紧接手引导 Prompt 与 `dbk-pickup` 的行动边界（两个 skill 的 `metadata.version` 升至 `0.2.0`）：接手 Agent 读取报告并汇报现状与下一步计划后，默认必须暂停并等待用户确认，确认前禁止在同一轮直接修改文件或执行待办命令。
+
 ## 2026-10-18
 
 ### Added

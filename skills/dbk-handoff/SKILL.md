@@ -4,7 +4,7 @@ description: 总结当前会话的上下文与开发进度，生成标准化交�
 license: MIT
 metadata:
   author: DBinK
-  version: "0.1.0"
+  version: "0.2.0"
 ---
 
 # 上下文交接导出（dbk-handoff）
@@ -105,12 +105,12 @@ transcript: <transcript 绝对路径，客户端未暴露时省略本行>
 请检查你是否已安装 `dbk-pickup` skill。若未安装，请先装上该 skill（如 `npx skills add DBinK/dbk-handoff -g -y`）并重新加载 skills，再调用 `dbk-pickup`。
 
 【接手指引】
-请调用 `dbk-pickup` skill 并结合以下信息开展工作：
+请调用 `dbk-pickup` skill 恢复以下任务的上下文：
 - 项目根目录：<workspace 绝对路径>
 - 交接报告路径：<workspace 绝对路径>/.agent/handoff/<YYMMDD>-<HHMM>-<task>.md
 - 原 Agent 完整对话记录（仅在报告细节不足时按需查阅，请勿盲目全读）：<transcript 绝对路径，若客户端未暴露则省略本行>
 
-请先阅读交接报告，用简短几句话向我确认你已理清当前现状和下一步，然后再继续执行任务。
+请先阅读交接报告，用简短几句话向我汇报你所理解的当前现状与下一步计划，然后停下来等待我确认，在此之前不要修改任何文件或执行待办命令。
 ----------------------------------------
 ````
 
