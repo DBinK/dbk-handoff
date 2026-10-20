@@ -45,10 +45,8 @@ metadata:
 1. 检查 `<workspace>/.agent/handoff/` 目录是否存在，不存在则创建。
 2. 若 `<workspace>/.agent/handoff/.gitignore` 不存在，创建并写入以下内容，防止交接快照污染业务版本库：
    ```gitignore
-   # 忽略所有交接快照和临时文件
+   # 忽略所有交接快照与本文件自身，不污染业务仓库
    *
-   # 保留本忽略文件自身
-   !.gitignore
    ```
 3. 按下方报告模板写入 `<workspace>/.agent/handoff/<YYMMDD>-<HHMM>-<task>.md`。
 4. 将**完全相同的内容**覆盖写入 `<workspace>/.agent/handoff/latest.md`（保留相同的 `snapshot` 字段，不使用符号链接）。

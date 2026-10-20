@@ -4,6 +4,12 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，条目按日期组织（个人项目，暂不采用版本号）。
 
+## 2026-10-20
+
+### Fixed
+
+- 修正 `.agent/handoff/.gitignore` 模板：只保留 `*` 以将忽略文件自身一并忽略，避免在用户业务仓库产生未跟踪的 `.gitignore` 文件。
+
 ## 2026-10-19
 
 ### Changed
