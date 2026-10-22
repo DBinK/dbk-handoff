@@ -26,6 +26,28 @@
 
 ---
 
+## 工作流程
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as 用户 (Human)
+    participant AgentA as Agent A (当前工作)
+    participant Disk as 本地文件系统 (.agent/handoff/)
+    participant AgentB as Agent B (接手工作)
+
+    User->>AgentA: 触发交接（例如调用 dbk-handoff）
+    AgentA->>AgentA: 提炼高密度摘要 (目标/基线矩阵/决策/待办)
+    AgentA->>Disk: 写入 <YYMMDD>-<HHMM>-<slug>.md & latest.md
+    AgentA-->>User: 输出一键复制的 Prompt 代码块
+    User->>AgentB: 粘贴 Prompt 发送给 Agent B
+    AgentB->>Disk: 读取 latest.md 或指定交接报告
+    AgentB-->>User: 汇报任务理解与下一步计划，暂停等待确认
+    User->>AgentB: 确认后指令继续执行
+```
+
+---
+
 ## 组成
 
 | 技能 | 角色 | 核心职责 |
