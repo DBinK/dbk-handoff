@@ -7,22 +7,9 @@
 
 > **跨 AI Agent 的通用上下文交接与需求交付基线协议**
 
-在 Claude Code、Cursor、Windsurf、OpenHands、Antigravity、pi 等不同 AI 客户端之间切换或新开会话时，接手任务的 Agent 往往缺少前序上下文：要么漫无目的地全仓盲搜、重复踩前人已排除的死胡同方案，要么面对长篇 PRD/技术方案丢失全局坐标、拿完指令直接无脑开改。
+在 Claude Code、Cursor、Windsurf、OpenHands、Antigravity、pi 等工具之间切换或新开会话时，新 Agent 往往缺少前序上下文：要么全仓盲目搜索、重复踩已排除的坑，要么面对长篇 PRD/技术方案丢失全局坐标、拿完指令直接无脑开改。
 
-`dbk-handoff` 是一套纯文件、免后端的标准化交接协议。通过发出端归档高密度 Markdown 快照与接收端受控接手，实现任务上下文无缝传递。
-
----
-
-## 核心特性
-
-- **纯文件协议**：只依赖工作区读写能力，产物为纯 Markdown，零服务、零数据库。
-- **自适应双轨制（Dual-Track）**：
-  - **敏捷自由模式**：日常开发或快速修 bug，一键归档当前技术断点与核心工作集。
-  - **规范基线模式（Spec-Driven）**：当提供 PRD、技术方案或项目单时，自动提炼结构化需求对照矩阵，宏观进度（如 `[2/4]`）一目了然。
-- **防重复考古（Dead Ends 前置）**：继承自 [`can1357/oh-my-pi`](https://github.com/can1357/oh-my-pi)（omp）的设计哲学，严格限定 5~15 个核心工作集文件，显式锁定已排除的死胡同方案，防止接手 Agent 重复踩坑。
-- **渐进式加载与防 Token 爆炸**：优先消费 1~3 KB 的精炼快照；原始会话日志（Transcript）仅作最后兜底且必须按需局部检索。
-- **汇报后强制暂停（人工确认环）**：接手 Agent 读完报告后必须向用户汇报理解并**立即停下来等待确认**，确认前禁止擅自修改任何文件。
-- **零仓库污染**：快照目录 `.agent/handoff/` 自动写入 `*` 忽略规则，将快照与忽略文件自身一并忽略，不污染业务 Git 仓库。
+`dbk-handoff` 是一套纯文件、免后端的标准化交接协议：发出端归档高密度快照，接收端受控接手，全程零服务依赖。
 
 ---
 
@@ -32,53 +19,80 @@
 sequenceDiagram
     autonumber
     actor User as 用户 (Human)
-    participant AgentA as Agent A (当前工作)
-    participant Disk as 本地文件系统 (.agent/handoff/)
-    participant AgentB as Agent B (接手工作)
+    participant AgentA as Agent A (当前会话)
+    participant AgentB as Agent B (接手会话)
 
-    User->>AgentA: 触发交接（例如调用 dbk-handoff）
-    AgentA->>AgentA: 提炼高密度摘要 (目标/基线矩阵/决策/待办)
-    AgentA->>Disk: 写入 <YYMMDD>-<HHMM>-<slug>.md & latest.md
-    AgentA-->>User: 输出一键复制的 Prompt 代码块
-    User->>AgentB: 粘贴 Prompt 发送给 Agent B
-    AgentB->>Disk: 读取 latest.md 或指定交接报告
-    AgentB-->>User: 汇报任务理解与下一步计划，暂停等待确认
-    User->>AgentB: 确认后指令继续执行
+    User->>AgentA: 触发交接（/dbk-handoff）
+    Note over AgentA: 归档快照至 .agent/handoff/
+    AgentA-->>User: 输出一键复制的 Prompt
+    User->>AgentB: 粘贴 Prompt
+    Note over AgentB: 读取快照恢复上下文
+    AgentB-->>User: 汇报现状与计划，等待确认
+    User->>AgentB: 确认后继续执行
 ```
 
 ---
 
-## 组成
+## 快速上手
 
-| 技能 | 角色 | 核心职责 |
-| :--- | :--- | :--- |
-| **`dbk-handoff`** | 发出端 | 采集环境与 Git 状态，提炼任务目标（或需求矩阵）、核心工作集、避坑指南与下一步待办，双写时间戳快照和 `latest.md`，输出接手引导 Prompt。 |
-| **`dbk-pickup`** | 接收端 | 按显式路径优先、`latest.md` 兜底规则读取快照，校验协议版本与 Git 状态，向用户汇报现状与计划后**暂停等待确认**。 |
-
----
-
-## 安装
+### 1. 安装
 
 ```bash
 npx skills add DBinK/dbk-handoff -g -y
 ```
 
-支持 skills 生态的客户端可直接执行上述命令；其他环境可由 Agent 根据自身平台完成安装。
+### 2. 两步完成交接
 
-> [!IMPORTANT]
-> 读取交接报告必须调用 `dbk-pickup` 技能，通过其内置的版本校验、Git 状态比对与行动熔断机制受控恢复，请勿直接裸读 `.agent/handoff/latest.md`。
+1. **发出交接（Agent A）**：在当前窗口告诉 Agent `做个交接`（有 PRD 时可说 `对照 prd.md 做交接`）。它会在 `.agent/handoff/` 生成快照并输出一段引导 Prompt。
+2. **接手任务（Agent B）**：在新窗口直接粘贴引导 Prompt。接手 Agent 会调用 `dbk-pickup` 汇报理解并**停下来等待确认**，你确认后再开干。
+
+<details>
+<summary>📋 <b>点击展开：粘贴给 Agent B 的引导 Prompt 示例</b></summary>
+
+````text
+--- [请复制以下内容发送给接手 Agent] ---
+
+我需要将以下开发任务交接给你继续推进：
+
+- **任务目标**：完成鉴权模块重构与测试闭环
+- **当前进度**：对照需求文档已完成 [2/4]，正处于第 3 项（RBAC 中间件编写中）
+- **项目目录**：/Users/binn/it/my-project
+- **交接报告**：/Users/binn/it/my-project/.agent/handoff/261022-1030-auth-refactor.md
+
+**接手要求**：
+1. 请先确认已安装 `dbk-pickup` skill，未安装时先运行 `npx skills add DBinK/dbk-handoff -g -y`。
+2. 调用 `dbk-pickup` 读取交接报告，用简短几句话向我汇报你理解的现状与下一步计划。
+3. 原会话记录仅作兜底，只在报告细节缺失时按需局部检索，切勿全量读取。
+4. **汇报完毕后请直接暂停并等待我确认**，确认前禁止修改任何文件或执行非只读命令。
+
+----------------------------------------
+````
+
+</details>
+
+<details>
+<summary>🤖 <b>点击展开：接手 Agent 的安全复述效果</b></summary>
+
+> “已读取交接报告 `261022-1030-auth-refactor.md`，工作区 Git 状态与交接时一致。  
+> 对照需求文档当前整体进度为 [2/4]，前两项 OAuth2 与 Token 刷新已跑通；目前正停留在第 3 项（RBAC 中间件编写）。我已明确排除全局 Session 方案的避坑提示，下一步计划在 `src/middleware/auth.rs` 实现角色鉴权函数并运行自测。  
+> 我已就绪，请确认是否继续？”
+
+</details>
 
 ---
 
-## 工作流与示例
+## 核心特性
 
-### 1. 发出交接
+- **自适应双轨制（Dual-Track）**：
+  - **敏捷自由模式**：日常开发或快速修 bug，一键归档当前技术断点与核心工作集。
+  - **规范基线模式（Spec-Driven）**：提供 PRD / 技术方案 / 需求单时，自动提炼**结构化需求对照矩阵**，宏观完成度（如 `[2/4]`）一目了然。
+- **汇报后强制暂停（人工确认环）**：接手 Agent 读完报告后**默认暂停并等待确认**，杜绝无脑直接动手改错代码。
+- **防重复考古（Dead Ends 前置）**：继承自 [`can1357/oh-my-pi`](https://github.com/can1357/oh-my-pi)（omp）哲学，限定 5~15 个核心工作集，前置锁定已排除的死胡同方案。
+- **渐进式加载防爆炸**：优先读取 1~3 KB 的精炼快照；原始会话日志（Transcript）仅作最后兜底且必须按需局部检索。
+- **零仓库污染**：快照目录 `.agent/handoff/` 自动写入 `*` 忽略规则，将快照与忽略文件自身一并忽略，不污染业务 Git 仓库。
 
-在当前会话中调用 `dbk-handoff`：
-- **普通调用**：“任务先做到这，做个交接” → 触发敏捷自由模式。
-- **需求驱动调用**：“对照刚才发你的技术方案做个交接” / “对照 docs/prd.md 跑一下 dbk-handoff” → 触发规范基线模式。
-
-#### 生成的交接报告示例（`.agent/handoff/<YYMMDD>-<HHMM>-<task>.md`）
+<details>
+<summary>📄 <b>点击展开：生成的标准化交接报告示例（带需求对照矩阵）</b></summary>
 
 ```markdown
 ---
@@ -127,39 +141,16 @@ git: { branch: main, head: 11670ce, dirty: true }
 - `cargo test --test auth_test`
 ```
 
+</details>
+
 ---
 
-### 2. 接手任务
+## 组成
 
-发出端在生成报告的同时，会输出一段可直接复制的引导 Prompt。将该 Prompt 粘贴给接手 Agent：
-
-````text
---- [请复制以下内容发送给接手 Agent] ---
-
-我需要将以下开发任务交接给你继续推进：
-
-- **任务目标**：完成鉴权模块重构与测试闭环
-- **当前进度**：对照需求文档已完成 [2/4]，正处于第 3 项（RBAC 中间件编写中）
-- **项目目录**：/Users/binn/it/my-project
-- **交接报告**：/Users/binn/it/my-project/.agent/handoff/261022-1030-auth-refactor.md
-
-**接手要求**：
-1. 请先确认已安装 `dbk-pickup` skill，未安装时先运行 `npx skills add DBinK/dbk-handoff -g -y`。
-2. 调用 `dbk-pickup` 读取交接报告，用简短几句话向我汇报你理解的现状与下一步计划。
-3. 原会话记录仅作兜底，只在报告细节缺失时按需局部检索，切勿全量读取。
-4. **汇报完毕后请直接暂停并等待我确认**，确认前禁止修改任何文件或执行非只读命令。
-
-----------------------------------------
-````
-
-接手 Agent 会调用 `dbk-pickup`，校验 Git 状态一致性，向用户复述任务理解并停下来：
-
-> **接手 Agent 响应示例**：
-> “已读取交接报告 `261022-1030-auth-refactor.md`，工作区 Git 状态与交接时一致。
-> 对照需求文档当前整体进度为 [2/4]，前两项 OAuth2 与 Token 刷新已跑通；目前正停留在第 3 项（RBAC 中间件编写）。我已明确排除全局 Session 方案的避坑提示，下一步计划在 `src/middleware/auth.rs` 实现角色鉴权函数并运行自测。
-> 我已就绪，请确认是否继续？”
-
-用户回复确认后，Agent 才正式开始修改代码。
+| 技能 | 角色 | 核心职责 |
+| :--- | :--- | :--- |
+| **`dbk-handoff`** | 发出端 | 提炼任务目标（或需求矩阵）、核心工作集、避坑指南与下一步待办，双写快照并输出引导 Prompt。 |
+| **`dbk-pickup`** | 接收端 | 按规则读取快照，校验协议版本与 Git 状态，向用户汇报现状后**暂停等待确认**。 |
 
 ---
 
