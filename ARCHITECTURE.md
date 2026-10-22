@@ -67,6 +67,7 @@
 | `source_agent` | 是 | 生成报告的 Agent 标识，如 `claude-code`、`cursor`。 |
 | `source_model` | 否 | 生成报告的模型标识。 |
 | `task` | 是 | 简短任务主题，与文件名中的 `<简短主题>` 对应。 |
+| `spec` | 否 | 需求文档或方案引用：文件相对/绝对路径（如 `docs/rfcs/auth.md`）或在线需求单链接（如飞书文档、Meegle 单号、Issue URL）；无明确需求文档时省略。 |
 | `git` | 否 | 仓库状态：`branch`、`head`（短 SHA）、`dirty`（是否有未提交改动）。非 Git 工作区可省略。`dirty` 在写入本次交接文件之前采集，且忽略 `.agent/` 路径，避免交接产物本身把工作区标记为脏。 |
 | `transcript` | 否 | 原 Agent 会话日志的绝对路径（仅在当前客户端环境显式暴露路径时填写，未暴露时省略，禁止盲搜或猜测路径）。 |
 
@@ -106,12 +107,14 @@ sequenceDiagram
 
 #### 报告提炼要素与执行步骤：
 1. **分析当前上下文**：提炼以下核心要素，并写入标准化报告：
-   - **📋 报告元数据 (Frontmatter)**：按 §2.4 填写 `handoff_version`、`created`、`snapshot`、`workspace`、`source_agent`、`source_model`、`task`、`git` 状态与可选的 `transcript`。
-   - **🎯 任务目标 (Goal & Scope)**：原始用户需求与最终验收交付标准。
+   - **📋 报告元数据 (Frontmatter)**：按 §2.4 填写 `handoff_version`、`created`、`snapshot`、`workspace`、`source_agent`、`source_model`、`task`、可选的 `spec`、`git` 状态与可选的 `transcript`。
+   - **🎯 任务目标与交付基线 (Goal & Baseline - 自适应双轨制)**：
+     - **轨 A（有 PRD / 技术方案 / 需求单驱动）**：记录需求引用与宏观交付标准，生成结构化**需求与验收对照矩阵**，明确标注每个需求条目的状态（`✅ 已完成`、`🚧 进行中`、`⏳ 待开工`），指明当前停留在哪一条。
+     - **轨 B（普通自由开发）**：简述原始用户需求与最终验收交付标准。
    - **📂 核心工作集 (Key Files & Working Set - 吸收自 omp)**：明确列出 5~15 个关键文件路径（被修改的文件、核心依赖、测试用例、配置文件），并附带一句话角色说明，避免新 Agent 盲目全局 grep。
    - **✅ 已完成进展 (Completed Work)**：修改了哪些文件、跑通了哪些功能。
    - **💡 关键决策与避坑指南 (Decisions & Dead Ends - 吸收自 omp)**：为什么采用该方案，**特别记录尝试过但失败的方案与踩坑点**，明令禁止接手 Agent 重复踩坑。
-   - **⏳ 当前停顿点与下一步待办 (Next Steps)**：明确当前精确卡在哪个具体代码位置，下一步立即执行的有序待办列表。
+   - **⏳ 当前停顿点与下一步待办 (Next Steps)**：明确当前精确卡在哪个具体代码位置（若有需求矩阵，对应矩阵中“🚧 进行中”的条目），下一步立即执行的有序待办列表。
    - **🧪 验证与自测方案 (Verification Plan - 吸收自 omp)**：接手 Agent 编写完代码后应运行的验证命令（如 `npm test`、`cargo check`、`pytest` 等）。
    - **📜 原始会话日志 (Raw Transcript Path，可选)**：仅当当前环境显式暴露本地会话日志路径时，记录其绝对路径作为兜底依据（写入 frontmatter 的 `transcript` 字段及引导 Prompt），未暴露时直接省略，禁止搜索宿主目录或猜测路径。
 
@@ -121,6 +124,8 @@ sequenceDiagram
    - 同步覆盖写入一份内容完全相同的副本至 `.agent/handoff/latest.md`。
 
 3. **生成的标准交接报告模板示例（`.agent/handoff/<slug>.md`）**：
+
+   **模板（通用基础版）**：
    ```markdown
    ---
    handoff_version: 1
@@ -130,6 +135,7 @@ sequenceDiagram
    source_agent: <agent 标识>
    source_model: <model-id>
    task: <简短主题>
+   spec: <需求文档路径或链接，无则省略>
    git: { branch: <branch>, head: <short-sha>, dirty: <true|false> }
    transcript: <transcript 绝对路径，客户端未暴露时省略本行>
    ---
@@ -158,23 +164,39 @@ sequenceDiagram
    - `<自测执行命令，例如 pytest / npm test / cargo test 等>`
    ```
 
+   **增强版：带需求对照矩阵（当任务提供 PRD / 技术方案时，替换“🎯 任务目标”部分）**：
+   ```markdown
+   ## 📋 需求与交付基线 (Spec & Baseline)
+   - **需求基准**: `<需求文档相对路径或在线单号/链接>`
+   - **对照进度**: [M/N] 已完成 M 项，1 项进行中，余下待开工
+
+   | 需求条目 / 功能点 | 状态 | 对应代码 / 验证状态 |
+   | :--- | :---: | :--- |
+   | 1. <功能点 A> | ✅ 已完成 | `<实现路径>`（已测试跑通） |
+   | 2. <功能点 B> | 🚧 进行中 | `<实现路径>`（**当前停顿点**：具体进度） |
+   | 3. <功能点 C> | ⏳ 待开工 | 尚未触及 |
+   ```
+
 4. **吐出引导 Prompt**：在控制台最后以 Markdown 代码块输出一段预制提示词，方便用户直接复制到下一个 Agent。
 
 #### 吐出的引导 Prompt 模板示例：
 ````markdown
 --- [请复制以下内容发送给接手 Agent] ---
-我在使用另一个 AI 协助开发，现需要你接手该任务。
 
-【前置检查】
-请检查你是否已安装 `dbk-pickup` skill。若未安装，请先装上该 skill（如 `npx skills add DBinK/dbk-handoff -g -y`）并重新加载 skills，再调用 `dbk-pickup`。
+我需要将以下开发任务交接给你继续推进：
 
-【接手指引】
-请调用 `dbk-pickup` skill 恢复以下任务的上下文：
-- 项目根目录：<工作区绝对路径>
-- 交接报告路径：<工作区绝对路径>/.agent/handoff/<YYMMDD>-<HHMM>-<简短主题>.md
-- 原 Agent 完整对话记录（仅在报告细节不足时按需查阅，请勿盲目全读）：<原Agent日志绝对路径，若客户端未暴露则省略本行>
+- **任务目标**：<一句话简述在做什么>
+- **当前进度**：<一句话简述做到了哪一步 / 停在哪里>
+- **项目目录**：<工作区绝对路径>
+- **交接报告**：<工作区绝对路径>/.agent/handoff/<YYMMDD>-<HHMM>-<简短主题>.md
+- **原会话记录**：<原Agent日志绝对路径，若客户端未暴露则省略本行>
 
-请先阅读交接报告，用简短几句话向我汇报你所理解的当前现状与下一步计划，然后停下来等待我确认，在此之前不要修改任何文件或执行待办命令。
+**接手要求**：
+1. 请先确认已安装 `dbk-pickup` skill，未安装时先运行 `npx skills add DBinK/dbk-handoff -g -y`。
+2. 调用 `dbk-pickup` 读取交接报告，用简短几句话向我汇报你理解的现状与下一步计划。
+3. 原会话记录仅作兜底，只在报告细节缺失时按需局部检索，切勿全量读取。
+4. **汇报完毕后请直接暂停并等待我确认**，确认前禁止修改任何文件或执行非只读命令。
+
 ----------------------------------------
 ````
 
