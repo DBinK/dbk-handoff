@@ -1,11 +1,12 @@
 ﻿# dbk-handoff
 
 [![skills.sh](https://skills.sh/b/DBinK/dbk-handoff)](https://skills.sh/DBinK/dbk-handoff)
-[![Agent Skills](https://img.shields.io/badge/Agent_Skills-Standard-black)](https://agentskills.io)
-[![Protocol](https://img.shields.io/badge/Handoff_Protocol-v1-blue)](ARCHITECTURE.md)
+[![GitHub stars](https://img.shields.io/github/stars/DBinK/dbk-handoff?style=flat&color=yellow)](https://github.com/DBinK/dbk-handoff/stargazers)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+ [![Compatible](https://img.shields.io/badge/Compatible-Any_Agent-8A2BE2)](README.md#工作流程)
+[![Control](https://img.shields.io/badge/Control-Human--in--the--Loop-orange)](README.md#核心特性)
 
-> **用于跨 AI Agent 会话接力的 Agent Skills。**
+> **用于跨 AI Agent 会话接力的 Agent Skills**
 
 在 omp、pi、dsh、Codex、Claude Code、Antigravity 等工具间切换或开启新会话时，开发上下文会随之中断。新会话因缺少前序状态，往往需要重新检索代码库、重复尝试已排除的方案，或在未对齐当前进度的情况下直接修改代码
 
