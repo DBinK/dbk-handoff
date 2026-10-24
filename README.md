@@ -1,5 +1,11 @@
 ﻿# dbk-handoff
 
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/d20c3e24-ac2c-4d2a-ac9c-79ccece3f10f" style="width: 100%; height: auto;">
+</p>
+
+---
+
 [![skills.sh](https://skills.sh/b/DBinK/dbk-handoff)](https://skills.sh/DBinK/dbk-handoff)
 [![GitHub stars](https://img.shields.io/github/stars/DBinK/dbk-handoff?style=flat&color=yellow)](https://github.com/DBinK/dbk-handoff/stargazers)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
