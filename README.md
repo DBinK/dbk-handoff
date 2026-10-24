@@ -11,8 +11,8 @@
 在 omp、pi、dsh、Codex、Claude Code、Antigravity 等工具间切换或开启新会话时，开发上下文会随之中断。新会话因缺少前序状态，往往需要重新检索代码库、重复尝试已排除的方案，或在未对齐当前进度的情况下直接修改代码
 
 本项目提供两个配套 Skill，通过本地 Markdown 快照（`.agent/handoff/xxx.md`）传递任务状态：
-- `dbk-handoff`: 负责归档任务进度、需求对照矩阵、核心文件集与已排除方案落盘进度快照文档
-- `dbk-pickup`: 负责在新会话中校验 Git 工作区状态、汇报当前断点，并**暂停等待人工确认**后再继续执行
+- `/dbk-handoff`: 负责提炼任务进度、需求对照矩阵、核心文件与已排除方案，**生成本地快照文档**与引导词
+- `/dbk-pickup`: 负责在新会话中校验 Git 工作区状态、汇报当前断点，并**暂停等待人工确认**后再继续执行
 
 ---
 
@@ -26,15 +26,15 @@ sequenceDiagram
     participant AgentB as Agent B (接手会话)
 
     rect rgba(127, 127, 127, 0.12)
-        Note over User,AgentB: ① 发出端 · /dbk-handoff
+        Note over User,AgentB: ① 发出端
         User->>AgentA: 触发交接（/dbk-handoff）
         Note over AgentA: 归档快照至 .agent/handoff/
         AgentA-->>User: 输出一键复制的 Prompt
     end
 
     rect rgba(127, 127, 127, 0.12)
-        Note over User,AgentB: ② 接收端 · /dbk-pickup
-        User->>AgentB: 粘贴 Prompt
+        Note over User,AgentB: ② 接收端
+        User->>AgentB: 粘贴 Prompt（/dbk-pickup）
         Note over AgentB: 读取快照恢复上下文
         AgentB-->>User: 汇报现状与计划，等待确认
         User->>AgentB: 确认后继续执行
@@ -117,7 +117,7 @@ git: { branch: main, head: 11670ce, dirty: true }
 | **Claude Code `MEMORY.md` / Mem0**<br>([Claude 文档](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview) / [Mem0 官网](https://mem0.ai)) | **全局长期记忆与偏好**：沉淀跨项目的通用经验、个人开发偏好与项目长期认知（常驻后台）。 | **全局偏好 vs 单次任务断点**：长期记忆不感知“当前这次开发写到了第几步、卡在哪行代码”，`dbk-handoff` 专记单次任务的高密度动态断点，即用即走。 |
 | **`AGENTS.md` / `CLAUDE.md`**<br>([Agent Skills 规范](https://agentskills.io)) | **长期静态规则库**：常驻仓库根目录，定义技术栈要求、编码风格与构建测试命令。 | **动静互补**：规则文件管“静态通用标准”，不记录任务动态进展，`dbk-handoff` 专记“当前进度矩阵与已排除的踩坑方案”。 |
 | **GitHub Spec Kit**<br>([github/spec-kit](https://github.com/github/spec-kit)) | **需求落地全流程**：通过 `specify → plan → tasks → implement` 完成宏观需求拆解。 | **宏观规划 vs 微观接力**：Spec Kit 负责定义“要做什么”，`dbk-handoff` 在具体实现切换工具时，提供“当前交付完成度与精准代码断点”。 |
-| **omp `/handoff`**<br>([can1357/oh-my-pi](https://github.com/can1357/oh-my-pi)) | **会话交接原型**：本项目核心设计灵感来源，首创了锁定 Dead Ends 与 Working Set 的交接哲学。 | **继承与泛化**：本项目继承其精炼理念，进一步扩展为**跨客户端 Skill**，并增加了**需求对照矩阵**与**接手强制暂停确认环**。 |
+| **omp `/handoff`**<br>([can1357/oh-my-pi](https://github.com/can1357/oh-my-pi)) | **会话交接原型**：本项目设计灵感来源，首创了显式记录“已排除方案”与“核心工作集”的交接机制。 | **继承与泛化**：本项目继承其精炼理念，进一步扩展为**跨客户端 Skill**，并增加了**需求对照矩阵**与**接手强制暂停确认环**。 |
 
 > 注：以上依据各项目公开文档描述其核心能力边界，若随版本迭代有出入，欢迎提交 Issue 探讨校准。
 
@@ -203,7 +203,7 @@ npx skills add DBinK/dbk-handoff -g -y
 
 ## 致谢
 
-- [`can1357/oh-my-pi`](https://github.com/can1357/oh-my-pi)（omp）：感谢其极具前瞻性的 `/handoff` 机制与上下文工程哲学。本项目深度借鉴了 omp 对**核心工作集（Key Files）**、**死胡同方案（Dead Ends）前置锁定**与**验证闭环（Verification Plan）**的严格定义，从而彻底告别低效的代码考古。
+- [`can1357/oh-my-pi`](https://github.com/can1357/oh-my-pi)（omp）：感谢其极具前瞻性的 `/handoff` 机制与上下文工程哲学。本项目深度借鉴了 omp 对 **核心工作集（Key Files）**、**死胡同方案（Dead Ends）前置锁定** 与 **验证闭环（Verification Plan）** 的严格定义，从而彻底告别低效的代码考古。
 
 ## 许可
 
