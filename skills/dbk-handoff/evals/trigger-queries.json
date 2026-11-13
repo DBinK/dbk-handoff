@@ -32,6 +32,14 @@
     "should_trigger": true
   },
   {
+    "query": "针对这个方案跑一下 dbk-handoff，把交接文档写到 /Users/binn/wj/wuji-software-integration.worktrees/cases 目录去",
+    "should_trigger": true
+  },
+  {
+    "query": "聊出来的这个集成测试方案，帮我交接到另一个仓库 /path/to/other-repo 下面准备接手",
+    "should_trigger": true
+  },
+  {
     "query": "我在使用另一个 AI 协助开发，现需要你接手该任务。请调用 dbk-pickup 并读取 .agent/handoff/261018-1230-auth-refactor.md",
     "should_trigger": false
   },

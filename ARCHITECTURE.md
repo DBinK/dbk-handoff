@@ -12,7 +12,7 @@
 | **开源仓库名** | `dbk-handoff` | 统一开源仓库与品牌标识 |
 | **发出端 Skill** | `dbk-handoff` | 总结当前进度、写入上下文报告、生成引导 Prompt |
 | **接收端 Skill** | `dbk-pickup` | 接管任务、读取交接报告、向用户确认后继续执行 |
-| **报告存储目录** | `.agent/handoff/` | 位于当前工作区（Workspace）根目录下 |
+| **报告存储目录** | `.agent/handoff/` | 位于目标工作区（Target Workspace）根目录下，默认为当前工作区根目录 |
 | **最新快照副本** | `.agent/handoff/latest.md` | 最新一份快照的完整拷贝，方便免参快速读取；文件内 `snapshot` 字段指向权威快照 |
 
 ---
@@ -54,7 +54,14 @@
   3. **体积微乎其微**：单份交接文档通常仅 1~3 KB，双写不会对存储带来任何可见开销。
 - **快照归属**：`latest.md` 不是指针，而是最新快照的完整拷贝。报告模板中的 `snapshot` 字段记录该内容的权威快照文件名，因此即使 `latest.md` 被后续交接覆盖，读取者仍能据此回溯历史快照。`snapshot` 必须与写入时的快照文件名一致，两份文件内容保持完全一致。
 
-### 2.4 报告元数据（YAML Frontmatter）
+### 2.4 工作区模式：同域交接 vs 跨目录/跨工作树派生交接
+- **默认同域模式（Same-Workspace）**：交接发生在当前仓库/目录内（如切换客户端或新开会话）。目标工作区 `<target_workspace>` 即当前工作区根目录。
+- **跨目录/跨工作树派生模式（Target Workspace）**：在当前会话中讨论或衍生出属于另一仓库或新工作树的任务方案。若用户在指令中指定了目标路径（如 `/dbk-handoff 把方案写交接到 <目标路径>`）：
+  - 交接报告与 `.gitignore` 直接写入 `<target_workspace>/.agent/handoff/`。
+  - Frontmatter 的 `workspace` 写入目标目录绝对路径；`git` 元数据以目标目录为基准采集（`git -C <target_workspace> ...`）。若目标目录不是 git 仓库，省略 `git` 字段。
+  - 引导 Prompt 中的“项目目录”与“交接报告路径”自动对齐目标工作区，方便接手 Agent 在目标环境中无缝 `dbk-pickup`。
+
+### 2.5 报告元数据（YAML Frontmatter）
 
 每份交接报告开头必须包含 YAML frontmatter，用于版本校验、状态比对和机器解析：
 
@@ -63,12 +70,12 @@
 | `handoff_version` | 是 | 协议版本，当前为 `1`；不兼容变更时递增主版本号。 |
 | `created` | 是 | 生成时间，ISO 8601 格式并带时区偏移，如 `"2026-10-18T12:30:00+08:00"`；建议加引号，避免被 YAML 解析器自动转成时间类型。 |
 | `snapshot` | 是 | 权威快照文件名，必须与当前文件名一致；`latest.md` 内同样保留该字段。 |
-| `workspace` | 是 | 工作区根目录的绝对路径。 |
+| `workspace` | 是 | 目标工作区根目录的绝对路径（同域交接为当前工作区，跨域交接为指定的目标工作区）。 |
 | `source_agent` | 是 | 生成报告的 Agent 标识，如 `claude-code`、`cursor`。 |
 | `source_model` | 否 | 生成报告的模型标识。 |
 | `task` | 是 | 简短任务主题，与文件名中的 `<简短主题>` 对应。 |
 | `spec` | 否 | 需求文档或方案引用：文件相对/绝对路径（如 `docs/rfcs/auth.md`）或在线需求单链接（如飞书文档、Meegle 单号、Issue URL）；无明确需求文档时省略。 |
-| `git` | 否 | 仓库状态：`branch`、`head`（短 SHA）、`dirty`（是否有未提交改动）。非 Git 工作区可省略。`dirty` 在写入本次交接文件之前采集，且忽略 `.agent/` 路径，避免交接产物本身把工作区标记为脏。 |
+| `git` | 否 | 目标工作区仓库状态：`branch`、`head`（短 SHA）、`dirty`（是否有未提交改动）。非 Git 工作区可省略。`dirty` 在写入本次交接文件之前采集，且忽略 `.agent/` 路径，避免交接产物本身把工作区标记为脏。在跨域派生模式下，通过 `git -C <target_workspace>` 采集目标工作树的状态。 |
 | `transcript` | 否 | 原 Agent 会话日志的绝对路径（仅在当前客户端环境显式暴露路径时填写，未暴露时省略，禁止盲搜或猜测路径）。 |
 
 - 未知字段应被忽略，以保证向后兼容。
@@ -106,22 +113,23 @@ sequenceDiagram
 > **设计参考来源**：本交接报告格式深度吸收了 **`can1357/oh-my-pi` (omp)** 的 session handoff 机制与设计哲学。omp 证明了通过高密度结构化交接，可以避免接手 Agent 展开低效的“代码考古搜索（File Archaeology）”，并将已被排除的死胡同方案（Dead Ends）前置锁定，防止新 Agent 走回头路。
 
 #### 报告提炼要素与执行步骤：
-1. **分析当前上下文**：提炼以下核心要素，并写入标准化报告：
-   - **📋 报告元数据 (Frontmatter)**：按 §2.4 填写 `handoff_version`、`created`、`snapshot`、`workspace`、`source_agent`、`source_model`、`task`、可选的 `spec`、`git` 状态与可选的 `transcript`。
+1. **分析当前上下文与解析目标工作区**：
+   - **目标工作区解析**：若用户指定了目标目录（如另一个仓库或新工作树路径），`<target_workspace>` 即该指定路径；否则默认为当前工作区根目录。
+   - **📋 报告元数据 (Frontmatter)**：按 §2.5 填写 `handoff_version`、`created`、`snapshot`、`workspace`（目标工作区路径）、`source_agent`、`source_model`、`task`、可选的 `spec`、`git` 状态（面向目标工作区采集）与可选的 `transcript`。
    - **🎯 任务目标与交付基线 (Goal & Baseline - 自适应双轨制)**：
      - **轨 A（有 PRD / 技术方案 / 需求单驱动）**：记录需求引用与宏观交付标准，生成结构化**需求与验收对照矩阵**，明确标注每个需求条目的状态（`✅ 已完成`、`🚧 进行中`、`⏳ 待开工`），指明当前停留在哪一条。
-     - **轨 B（普通自由开发）**：简述原始用户需求与最终验收交付标准。
-   - **📂 核心工作集 (Key Files & Working Set - 吸收自 omp)**：明确列出 5~15 个关键文件路径（被修改的文件、核心依赖、测试用例、配置文件），并附带一句话角色说明，避免新 Agent 盲目全局 grep。
-   - **✅ 已完成进展 (Completed Work)**：修改了哪些文件、跑通了哪些功能。
+     - **轨 B（普通自由开发）**：简述原始用户需求与最终验收交付标准。在跨域派生模式下，聚焦阐明当前会话为目标工作区规划的设计方案与交付目标。
+   - **📂 核心工作集 (Key Files & Working Set - 吸收自 omp)**：明确列出 5~15 个关键文件路径（被修改的文件、核心依赖、测试用例、配置文件），统一使用相对于目标工作区根目录的路径，并附带一句话角色说明，避免新 Agent 盲目全局 grep。
+   - **✅ 已完成进展 (Completed Work)**：修改了哪些文件、跑通了哪些功能（跨域派生模式下，可说明源仓已完成的契约或目标仓已有基线）。
    - **💡 关键决策与避坑指南 (Decisions & Dead Ends - 吸收自 omp)**：为什么采用该方案，**特别记录尝试过但失败的方案与踩坑点**，明令禁止接手 Agent 重复踩坑。
    - **⏳ 当前停顿点与下一步待办 (Next Steps)**：明确当前精确卡在哪个具体代码位置（若有需求矩阵，对应矩阵中“🚧 进行中”的条目），下一步立即执行的有序待办列表。
    - **🧪 验证与自测方案 (Verification Plan - 吸收自 omp)**：接手 Agent 编写完代码后应运行的验证命令（如 `npm test`、`cargo check`、`pytest` 等）。
    - **📜 原始会话日志 (Raw Transcript Path，可选)**：仅当当前环境显式暴露本地会话日志路径时，记录其绝对路径作为兜底依据（写入 frontmatter 的 `transcript` 字段及引导 Prompt），未暴露时直接省略，禁止搜索宿主目录或猜测路径。
 
 2. **写盘归档**：
-   - 检查 `.agent/handoff/` 目录，若首次创建则自动放置 `.gitignore`。
+   - 检查 `<target_workspace>/.agent/handoff/` 目录，若首次创建则自动放置 `.gitignore`。
    - 按照 `<YYMMDD>-<HHMM>-<简短主题>.md` 写入交接快照，frontmatter 中的 `snapshot` 填写该文件名，并与 `created`、`git` 等元数据保持一致。
-   - 同步覆盖写入一份内容完全相同的副本至 `.agent/handoff/latest.md`。
+   - 同步覆盖写入一份内容完全相同的副本至 `<target_workspace>/.agent/handoff/latest.md`。
 
 3. **生成的标准交接报告模板示例（`.agent/handoff/<slug>.md`）**：
 
@@ -131,7 +139,7 @@ sequenceDiagram
    handoff_version: 1
    created: "<YYYY-MM-DDTHH:MM:SS+08:00>"
    snapshot: <YYMMDD>-<HHMM>-<简短主题>.md
-   workspace: <工作区绝对路径>
+   workspace: <目标工作区绝对路径>
    source_agent: <agent 标识>
    source_model: <model-id>
    task: <简短主题>
@@ -187,8 +195,8 @@ sequenceDiagram
 
 - **任务目标**：<一句话简述在做什么>
 - **当前进度**：<一句话简述做到了哪一步 / 停在哪里>
-- **项目目录**：<工作区绝对路径>
-- **交接报告**：<工作区绝对路径>/.agent/handoff/<YYMMDD>-<HHMM>-<简短主题>.md
+- **项目目录**：<目标工作区绝对路径>
+- **交接报告**：<目标工作区绝对路径>/.agent/handoff/<YYMMDD>-<HHMM>-<简短主题>.md
 - **原会话记录**：<原Agent日志绝对路径，若客户端未暴露则省略本行>
 
 **接手要求**：

@@ -4,6 +4,15 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，条目按日期组织（个人项目，暂不采用版本号）。
 
+## 2026-11-13
+
+### Added
+
+- 原生支持跨仓库 / 跨工作树派生交接（`metadata.version` 升级至 `0.4.0`）：
+  - 明确同域模式与跨目录/工作树派生模式：支持按用户指令将讨论出的方案精准写入目标目录的 `.agent/handoff/`。
+  - 元数据与 Git 状态自适应：跨域模式下 `workspace` 与 `git` 状态自动按目标工作区上下文采集（`git -C <target_workspace>`），引导 Prompt 自动将项目目录与报告路径对准目标。
+  - 触发评估集中补充跨工作树与跨仓库派生交接的测试用例。
+
 ## 2026-10-22
 
 ### Added

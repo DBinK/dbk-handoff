@@ -4,7 +4,7 @@ description: 读取 .agent/handoff/ 下的交接快照，校验协议版本与 G
 license: MIT
 metadata:
   author: DBinK
-  version: "0.3.0"
+  version: "0.4.0"
 ---
 
 # 上下文接手恢复（dbk-pickup）

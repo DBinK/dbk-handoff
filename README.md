@@ -54,6 +54,7 @@ sequenceDiagram
 - **自适应双轨制（Dual-Track）**：
   - **敏捷自由模式**：日常开发或快速修 bug，一键归档当前技术断点与核心工作集。
   - **规范基线模式（Spec-Driven）**：提供 PRD / 技术方案 / 需求单时，自动提炼**结构化需求对照矩阵**，宏观完成度（如 `[2/4]`）一目了然。
+- **支持跨仓库 / 跨工作树派生交接**：在当前会话中讨论出属于另一个仓库或新 worktree 的任务方案时，支持原生将交接文档与引导 Prompt 写向目标工作区目录。
 - **汇报后强制暂停（人工确认环）**：接手 Agent 读完报告后**默认暂停并等待确认**，避免在未对齐理解前直接修改代码。
 - **防重复考古（Dead Ends 前置）**：继承自 [`can1357/oh-my-pi`](https://github.com/can1357/oh-my-pi)（omp）哲学，限定 5~15 个核心工作集，前置锁定已排除的死胡同方案。
 - **渐进式加载防爆炸**：优先读取 1~3 KB 的精炼快照，原始会话日志（Transcript）仅作最后兜底且必须按需局部检索。
@@ -139,7 +140,7 @@ npx skills add DBinK/dbk-handoff -g -y
 
 ### 2. 两步完成交接
 
-1. **发出交接（Agent A）**：在当前窗口告诉 Agent `做个交接`（有 PRD 时可说 `对照 prd.md 做交接`）。它会在 `.agent/handoff/` 生成快照并输出一段引导 Prompt。
+1. **发出交接（Agent A）**：在当前窗口告诉 Agent `做个交接`（有 PRD 时可说 `对照 prd.md 做交接`；若需交接给另一仓库/worktree，可指定路径如 `把方案交接到 /path/to/other-repo`）。它会在目标工作区 `.agent/handoff/` 生成快照并输出一段引导 Prompt。
 2. **接手任务（Agent B）**：在新窗口直接粘贴引导 Prompt。接手 Agent 会调用 `dbk-pickup` 汇报理解并**停下来等待确认**，你确认后再开干。
 
 <details>
